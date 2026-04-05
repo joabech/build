@@ -54,7 +54,7 @@ define run_qemu
 endef
 
 # QEMU targets
-.PHONY: qemu qemu-gdb qemu-monitor qemu-gfx qemu-hello
+.PHONY: qemu qemu-gdb qemu-attach qemu-monitor qemu-gfx qemu-hello
 
 qemu: $(UBOOT_BIN)
 	$(call check_uboot)
@@ -70,6 +70,10 @@ qemu-gdb: $(UBOOT_BIN)
 	@echo "Connect with: aarch64-none-elf-gdb -ex 'target remote :1234' u-boot/u-boot"
 	@echo ""
 	$(call run_qemu,-nographic -s -S)
+
+qemu-attach: $(UBOOT_ELF)
+	@echo "Attaching GDB to QEMU on port 1234..."
+	$(TOOLCHAIN_AARCH64_BM)/aarch64-none-elf-gdb -ex 'target remote :1234' $(UBOOT_ELF)
 
 qemu-monitor: $(UBOOT_BIN)
 	$(call check_uboot)
