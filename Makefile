@@ -10,20 +10,33 @@ export PATH := $(TOOLCHAIN_AARCH64_BM):$(PATH)
 # QEMU configuration and targets (orchestration level)
 ################################################################################
 
-QEMU_BINARY 	  ?= qemu-system-aarch64
+QEMU_BINARY     ?= qemu-system-aarch64
 QEMU_MACHINE    ?= virt
 QEMU_CPU        ?= cortex-a53
 QEMU_MEMORY     ?= 512
 QEMU_SMP        ?= 2
 
-UBOOT_DIR 		  ?= $(WORKSPACE)/u-boot
-UBOOT_BIN 		  ?= $(UBOOT_DIR)/u-boot.bin
-UBOOT_ELF 		  ?= $(UBOOT_DIR)/u-boot
+UBOOT_DIR       ?= $(WORKSPACE)/u-boot
+UBOOT_BIN       ?= $(UBOOT_DIR)/u-boot.bin
+UBOOT_ELF       ?= $(UBOOT_DIR)/u-boot
 
 HELLO_DIR       ?= $(WORKSPACE)/hello-world
 HELLO_ELF       ?= $(HELLO_DIR)/hello-world.elf
 
-# Helper macros
+
+################################################################################
+# QEMU helper macros and targets
+################################################################################
+
+define check_qemu
+	@command -v $(QEMU_BINARY) >/dev/null 2>&1 || { \
+		echo "ERROR: $(QEMU_BINARY) not found"; \
+		echo "  Ubuntu/Debian: sudo apt install qemu-system-arm"; \
+		echo "  Fedora:        sudo dnf install qemu-system-aarch64"; \
+		echo "  macOS:         brew install qemu"; \
+		exit 1; }
+endef
+
 define check_uboot
 	@[ -f "$(UBOOT_BIN)" ] || { echo "ERROR: $(UBOOT_BIN) not found. Run 'make sdk-build' first."; exit 1; }
 endef
@@ -53,7 +66,9 @@ define run_qemu
 		$(1)
 endef
 
+################################################################################
 # QEMU targets
+################################################################################
 .PHONY: qemu qemu-gdb qemu-attach qemu-monitor qemu-gfx qemu-hello
 
 qemu: $(UBOOT_BIN)
@@ -102,3 +117,27 @@ qemu-hello: $(UBOOT_BIN)
 	@echo "Press Ctrl+A then X to quit."
 	@echo ""
 	$(call run_qemu,-nographic -drive file=fat:rw:$(HELLO_DIR),format=raw,if=virtio)
+
+################################################################################
+# Help
+################################################################################
+help:
+	@echo "Build targets:"
+	@echo "  make sdk-build        - Configure and build U-Boot"
+	@echo "  make sdk-test         - Verify the build output"
+	@echo "  make sdk-clean        - Remove build artifacts"
+	@echo ""
+	@echo "QEMU / debug targets:"
+	@echo "  make qemu             - Run U-Boot (serial console, Ctrl+A X to quit)"
+	@echo "  make qemu-gdb         - Run with GDB server on :1234 (blocks)"
+	@echo "  make qemu-monitor     - Run with QEMU monitor on stdio"
+	@echo "  make qemu-gfx         - Run with graphical output"
+	@echo "  make qemu-debug       - Attach aarch64-none-elf-gdb to a running qemu-gdb session"
+	@echo "  Workflow: terminal 1: make qemu-gdb  |  terminal 2: make qemu-debug"
+	@echo ""
+	@echo "Configuration:"
+	@echo "  CROSS_COMPILE        = $(CROSS_COMPILE)"
+	@echo "  UBOOT_DEFCONFIG      = $(UBOOT_DEFCONFIG)"
+	@echo "  TOOLCHAIN_AARCH64_BM = $(TOOLCHAIN_AARCH64_BM)"
+	@echo "  QEMU_MACHINE/CPU     = $(QEMU_MACHINE) / $(QEMU_CPU)"
+	@echo "  ccache               = $(if $(CCACHE),$(CCACHE),not found)"
