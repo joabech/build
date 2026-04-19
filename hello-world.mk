@@ -1,14 +1,9 @@
 ################################################################################
 # Variables
 ################################################################################
-WORKSPACE       ?= $(abspath $(dir $(lastword $(MAKEFILE_LIST)))..)
-
 HELLO_DIR       ?= $(WORKSPACE)/hello-world
-HELLO_BIN       ?= $(HELLO_DIR)/hello-world.bin
-HELLO_ELF       ?= $(HELLO_DIR)/hello-world.elf
-
-UBOOT_DIR       ?= $(WORKSPACE)/u-boot
-MKIMAGE         ?= $(UBOOT_DIR)/tools/mkimage
+HELLO_OUT       ?= $(OUT_DIR)/hello-world
+MKIMAGE         ?= $(OUT_DIR)/u-boot/tools/mkimage
 
 ################################################################################
 # Build Targets
@@ -16,19 +11,20 @@ MKIMAGE         ?= $(UBOOT_DIR)/tools/mkimage
 .PHONY: hello-world-build hello-world-clean run-hello
 
 hello-world-build:
+	@mkdir -p $(HELLO_OUT)
 	@$(MAKE) \
 		-C $(HELLO_DIR) \
+		OUTDIR=$(HELLO_OUT) \
 		CROSS_COMPILE=$(CROSS_COMPILE) \
 		TOOLCHAIN_PATH=$(TOOLCHAIN_AARCH64_BM) \
 		MKIMAGE=$(MKIMAGE) \
 		all
 
 hello-world-clean:
-	@$(MAKE) -C $(HELLO_DIR) clean
+	@$(MAKE) -C $(HELLO_DIR) OUTDIR=$(HELLO_OUT) clean
 
 ################################################################################
 # Run automated hello-world test via expect script
 ################################################################################
-
 run-hello: hello-world-build
-	@$(HELLO_DIR)/run-hello.sh
+	@OUTDIR=$(HELLO_OUT) $(HELLO_DIR)/run-hello.sh

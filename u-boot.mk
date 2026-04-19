@@ -11,18 +11,15 @@ endif
 ################################################################################
 # Toolchain and ccache
 ################################################################################
-
-# Prepend toolchain to PATH so the cross compiler and aarch64-none-elf-gdb
-# are found both during the build and when running QEMU/debug targets.
-export PATH := $(WORKSPACE)/$(TOOLCHAIN_AARCH64_BM):$(PATH)
+UBOOT_CROSS_COMPILE := $(TOOLCHAIN_AARCH64_BM)/$(CROSS_COMPILE)
 
 # Use ccache automatically when available.  U-Boot sets CC = $(CROSS_COMPILE)gcc
 # internally; overriding CC on the command line is the correct way to inject it.
 CCACHE := $(shell command -v ccache 2>/dev/null)
 ifneq ($(CCACHE),)
-UBOOT_CC := ccache $(CROSS_COMPILE)gcc
+UBOOT_CC := ccache $(UBOOT_CROSS_COMPILE)gcc
 else
-UBOOT_CC := $(CROSS_COMPILE)gcc
+UBOOT_CC := $(UBOOT_CROSS_COMPILE)gcc
 endif
 
 # macOS OpenSSL support
@@ -39,39 +36,52 @@ endif
 ################################################################################
 # QEMU configuration
 ################################################################################
-
-QEMU_BINARY   ?= qemu-system-aarch64
-QEMU_MACHINE  ?= virt
-QEMU_CPU      ?= cortex-a53
-QEMU_MEMORY   ?= 512
-QEMU_SMP      ?= 2
-
-UBOOT_DIR     ?= $(WORKSPACE)/u-boot
-UBOOT_BIN     ?= $(UBOOT_DIR)/u-boot.bin
-UBOOT_ELF     ?= $(UBOOT_DIR)/u-boot
+UBOOT_OUT          ?= $(OUT_DIR)/u-boot
+UBOOT_CONFIG_STAMP := $(UBOOT_OUT)/.config.stamp
 
 ################################################################################
 # Build / test / clean / flash  (called from sdk.yml redirects)
 ################################################################################
-.PHONY: u-boot-build u-boot-check u-boot-clean u-boot-flash
-
-u-boot-build:
-	@[ -d u-boot ] || { echo "ERROR: u-boot directory not found. Run 'cim update' first."; exit 1; }
-	$(MAKE) -C u-boot $(UBOOT_DEFCONFIG) CROSS_COMPILE=$(CROSS_COMPILE) $(OPENSSL_FLAGS)
-	$(MAKE) -C u-boot olddefconfig CROSS_COMPILE=$(CROSS_COMPILE) $(OPENSSL_FLAGS)
-	$(MAKE) -C u-boot CROSS_COMPILE=$(CROSS_COMPILE) CC="$(UBOOT_CC)" $(OPENSSL_FLAGS)
+.PHONY: u-boot-config u-boot-build u-boot-check u-boot-clean u-boot-flash
 
 u-boot-check:
-	@[ -f u-boot/u-boot.bin ] || { echo "ERROR: u-boot.bin not found. Run 'make sdk-build' first."; exit 1; }
+	@[ -f $(UBOOT_BIN) ] || { echo "ERROR: $(UBOOT_BIN) not found. Run 'make sdk-build' first."; exit 1; }
 	@echo "U-Boot binary exists - basic build verification passed"
-	@ls -lh u-boot/u-boot.bin
+	@ls -lh $(UBOOT_BIN)
+
+# The configure step, use a stamp/marker file to avoid re-running it on every
+# build.
+$(UBOOT_CONFIG_STAMP):
+	@[ -d $(UBOOT_DIR) ] || { echo "ERROR: u-boot directory not found. Run 'cim update' first."; exit 1; }
+	$(MAKE) -C $(UBOOT_DIR) \
+		O=$(UBOOT_OUT) $(UBOOT_DEFCONFIG) \
+		CROSS_COMPILE=$(UBOOT_CROSS_COMPILE) \
+		$(OPENSSL_FLAGS)
+	$(MAKE) -C $(UBOOT_DIR) \
+		O=$(UBOOT_OUT) olddefconfig \
+		CROSS_COMPILE=$(UBOOT_CROSS_COMPILE) \
+		$(OPENSSL_FLAGS)
+	@touch $(UBOOT_CONFIG_STAMP)
+
+u-boot-config: $(UBOOT_CONFIG_STAMP)
+
+u-boot-build: $(UBOOT_CONFIG_STAMP)
+	$(MAKE) -C $(UBOOT_DIR) \
+		O=$(UBOOT_OUT) \
+		CROSS_COMPILE=$(UBOOT_CROSS_COMPILE) \
+		CC="$(UBOOT_CC)" \
+		$(OPENSSL_FLAGS)
 
 u-boot-clean:
-	[ -d u-boot ] && $(MAKE) -C u-boot distclean CROSS_COMPILE=$(CROSS_COMPILE) 2>/dev/null || true
+	@[ -d $(UBOOT_DIR) ] && \
+		$(MAKE) -C $(UBOOT_DIR) \
+		CROSS_COMPILE=$(UBOOT_CROSS_COMPILE) \
+		distclean 2>/dev/null || true
+	rm -f $(UBOOT_CONFIG_STAMP)
 
 u-boot-flash:
 	@echo "U-Boot is a bootloader - no flashing needed from here."
 	@echo "Output files:"
-	@echo "  u-boot/u-boot.bin  - Raw binary"
-	@echo "  u-boot/u-boot      - ELF binary"
-	@echo "  u-boot/u-boot.dtb  - Device tree blob"
+	@echo "  $(UBOOT_BIN)  - Raw binary"
+	@echo "  $(UBOOT_ELF)  - ELF binary"
+	@echo "  $(UBOOT_OUT)/u-boot.dtb  - Device tree blob"
