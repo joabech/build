@@ -31,6 +31,7 @@ MKIMAGE         ?= $(OUT_DIR)/u-boot/tools/mkimage
 LINUX_BOOT_CMD  ?= $(WORKSPACE)/build/linux-boot.cmd
 BOOT_SCR        ?= $(BOOT_DIR)/boot.scr
 
+comma := ,
 
 ################################################################################
 # QEMU helper macros and targets. Normally these shouldn't be needed, since we
@@ -44,6 +45,7 @@ define check_qemu
 		echo "  Fedora:        sudo dnf install qemu-system-aarch64"; \
 		echo "  macOS:         brew install qemu"; \
 		exit 1; }
+	@echo "QEMU: $$($(QEMU_BINARY) --version | head -1)"
 endef
 
 define check_uboot
@@ -146,7 +148,7 @@ qemu-hello:
 	@echo ""
 	@echo "Press Ctrl+A then X to quit."
 	@echo ""
-	$(call run_qemu,-nographic -drive file=fat:rw:$(HELLO_OUT),format=raw,if=virtio)
+	$(call run_qemu,-nographic -drive if=none$(comma)id=fatdisk$(comma)file=fat:rw:$(HELLO_OUT) -device virtio-blk-device$(comma)drive=fatdisk)
 
 # QEMU with Linux + busybox initramfs on virtio disk (auto-boot via boot.scr)
 qemu-linux:
@@ -160,7 +162,7 @@ qemu-linux:
 	@cp -u $(INITRAMFS) $(BOOT_DIR)/initramfs.cpio.gz
 	@echo "Starting QEMU with Linux + busybox initramfs (auto-boot via boot.scr)..."
 	@echo ""
-	$(call run_qemu,-nographic -drive file=fat:rw:$(BOOT_DIR),format=raw,if=virtio)
+	$(call run_qemu,-nographic -drive if=none$(comma)id=fatdisk$(comma)file=fat:rw:$(BOOT_DIR)$(comma)format=raw -device nvme$(comma)drive=fatdisk$(comma)serial=boot)
 
 ################################################################################
 # Help
