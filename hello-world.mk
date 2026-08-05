@@ -10,7 +10,7 @@ MKIMAGE         ?= $(OUT_DIR)/u-boot/tools/mkimage
 ################################################################################
 .PHONY: hello-world-build hello-world-clean run-hello
 
-hello-world-build:
+hello-world-build: u-boot-build
 	@mkdir -p $(HELLO_OUT)
 	@$(MAKE) \
 		-C $(HELLO_DIR) \
