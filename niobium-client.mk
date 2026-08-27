@@ -39,6 +39,32 @@ niobium-client-build:
 		OPENFHE_DIR=$(OPENFHE_DIR) \
 		NIOBIUM_CLIENT_FHETCH_DIR=$(NIOBIUM_FHETCH_DIR) \
 		JSON_INCLUDE_DIR=$(JSON_DIR)/single_include
+	# dsl_fhe's generated CMakeLists.txt (xcomp/codegen.py) hardcodes
+	# vendor/-relative paths for niobium-fhetch's headers and built
+	# libnbfhetch - it has no NIOBIUM_CLIENT_FHETCH_DIR override of its
+	# own. Since that override (above) means niobium-client/vendor/
+	# niobium-fhetch stays an empty placeholder and libnbfhetch actually
+	# lands under build/_deps/niobium-fhetch-build/, bridge both expected
+	# locations to the real ones. dsl_fhe's own Makefile already expects
+	# build/vendor/niobium-fhetch to exist this way (see its LD_LIB_PATH).
+	mkdir -p $(NIOBIUM_CLIENT_DIR)/build/vendor
+	ln -sfn $(NIOBIUM_FHETCH_DIR)/include $(NIOBIUM_CLIENT_DIR)/vendor/niobium-fhetch/include
+	ln -sfn $(NIOBIUM_CLIENT_DIR)/build/_deps/niobium-fhetch-build $(NIOBIUM_CLIENT_DIR)/build/vendor/niobium-fhetch
+	# fhetch_driver (spawned by libnbfhetch for cooperative/record-once
+	# replay - e.g. dsl_fhe's test-simple "replay with NEW inputs" step)
+	# is gated behind NIOBIUM_FHETCH_WITH_TESTS, which niobium-client's
+	# own build never turns on. Turning it on inside niobium-client's own
+	# CMake tree collides with niobium-client's own examples (duplicate
+	# target names, e.g. plaintext_add_client) since both get configured
+	# together there. Build it from the standalone niobium-fhetch
+	# checkout in its own tree instead, reusing the OpenFHE/json already
+	# built above.
+	cmake -S $(NIOBIUM_FHETCH_DIR) -B $(NIOBIUM_FHETCH_DIR)/build \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DOPENFHE_INSTALL_DIR=$(NIOBIUM_CLIENT_DIR)/vendor/lib/openfhe \
+		-DJSON_INCLUDE_DIR=$(JSON_DIR)/single_include \
+		-DNIOBIUM_FHETCH_WITH_TESTS=ON
+	$(MAKE) -C $(NIOBIUM_FHETCH_DIR)/build fhetch_driver
 	$(MAKE) -C $(NIOBIUM_CLIENT_DIR)/dsl_fhe examples
 
 niobium-client-test:
