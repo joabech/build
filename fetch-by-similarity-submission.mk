@@ -1,20 +1,16 @@
 ################################################################################
 # fetch-by-similarity-submission
 #
-# This repo's own submission/niobium-client is a *separate* checkout from
-# the top-level niobium-client git (not shared) and, unlike that one, keeps
-# its submodules: the harness (harness/run_submission.py, harness/utils.py)
-# and submission/CMakeLists.txt hardcode the path
-# "submission/niobium-client" rather than accepting an override, and it's
-# the scoring harness, so it's best left unpatched. Those submodules are
-# synced by the fetch-by-similarity-submission-submodules install: step in
-# sdk.yml, so they're already in place by the time -build runs.
+# This repo keeps its own submission/niobium-client checkout (with
+# submodules), separate from the top-level niobium-client git, because the
+# scoring harness hardcodes that exact path and we don't want to patch it.
+# The submodules are synced by the install: step in sdk.yml before -build
+# runs.
 ################################################################################
 
 .PHONY: fetch-by-similarity-submission-build fetch-by-similarity-submission-test fetch-by-similarity-submission-clean
 
-# -j1: see niobium-client.mk's niobium-client-build for why this recursive
-# make needs to stay serial regardless of the outer -j.
+# -j1: same ordering issue as niobium-client-release in niobium-client.mk.
 fetch-by-similarity-submission-build:
 	$(MAKE) -j1 -C $(FETCH_BY_SIMILARITY_SUBMISSION_DIR)/submission/niobium-client release
 	cd $(FETCH_BY_SIMILARITY_SUBMISSION_DIR) && \
