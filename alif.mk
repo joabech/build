@@ -24,10 +24,10 @@ ALIF_SE_TOOLS_TAR := $(WORKSPACE)/downloads/app-release-exec-linux-SE_FW_1.112.0
 # $(MAKE) <target> - keeping the actual multi-line shell logic here avoids
 # the per-line-subshell behaviour of sdk.yml's "commands:" blocks).
 
-# Hand-write .west/config (same as platform-sdk's adi-zephyr-sdk-west-config)
-# instead of calling "west init -l": this needs no python/west binary at all,
-# so it works even before the pip install step has run, and lets west
-# commands be used manually from $(WORKSPACE) right away.
+# Hand-write .west/config instead of calling "west init -l": this needs no
+# python/west binary at all, so it works even before the pip install step
+# has run, and lets west commands be used manually from $(WORKSPACE) right
+# away.
 alif-west-config:
 	mkdir -p $(WORKSPACE)/.west
 	printf '[manifest]\npath = alif\nfile = west.yml\n' > $(WORKSPACE)/.west/config
