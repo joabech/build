@@ -16,7 +16,24 @@ ALIF_SE_TOOLS_DIR       := $(WORKSPACE)/toolchains/alif-se-tools
 
 export ZEPHYR_TOOLCHAIN_VARIANT := zephyr
 
-.PHONY: alif-build alif-test alif-clean alif-flash
+ALIF_SE_TOOLS_TAR := $(WORKSPACE)/downloads/app-release-exec-linux-SE_FW_1.112.00_DEV.tar
+
+.PHONY: alif-build alif-test alif-clean alif-flash alif-west-sync alif-zephyr-pip-deps alif-se-tools-extract
+
+# Install-time helpers (invoked from sdk.yml's install: section via
+# $(MAKE) <target> - keeping the actual multi-line shell logic here avoids
+# the per-line-subshell behaviour of sdk.yml's "commands:" blocks).
+
+alif-west-sync:
+	[ -d $(WORKSPACE)/.west ] || $(WORKSPACE)/.venv/bin/west init -l $(WORKSPACE)/alif
+	$(WORKSPACE)/.venv/bin/west update
+
+alif-zephyr-pip-deps:
+	$(WORKSPACE)/.venv/bin/pip install -r $(WORKSPACE)/zephyr/scripts/requirements.txt
+
+alif-se-tools-extract:
+	mkdir -p $(ALIF_SE_TOOLS_DIR)
+	tar -xf $(ALIF_SE_TOOLS_TAR) -C $(ALIF_SE_TOOLS_DIR) --strip-components=1
 
 alif-build:
 	@[ -d $(WORKSPACE)/.west ] || { echo "ERROR: west workspace not initialized. Run 'make install-all' first."; exit 1; }
