@@ -34,7 +34,7 @@ alif-west-config:
 	printf '[manifest]\npath = alif\nfile = west.yml\n' > $(WORKSPACE)/.west/config
 
 alif-west-sync:
-	$(WORKSPACE)/.venv/bin/west update
+	$(WORKSPACE)/.venv/bin/west update --auto-cache $(ALIF_WEST_CACHE)
 
 alif-zephyr-pip-deps:
 	$(WORKSPACE)/.venv/bin/pip install -r $(WORKSPACE)/zephyr/scripts/requirements.txt
