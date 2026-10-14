@@ -1,0 +1,15 @@
+# Balanced (3 epochs). A good default with a GPU (CUDA or Apple Silicon).
+peft:
+  r: 16
+  lora_alpha: 32
+  target_modules: auto
+sft:
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 4
+  max_length: 1024
+  learning_rate: 1.0e-4
+  num_train_epochs: 3
+  logging_steps: 10
+  eval_strategy: steps
+  eval_steps: 100
+  save_steps: 200

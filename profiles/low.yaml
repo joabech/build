@@ -1,0 +1,15 @@
+# Fast turnaround, modest quality (1 epoch). Good for iterating on data.
+peft:
+  r: 8
+  lora_alpha: 16
+  target_modules: auto
+sft:
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 2
+  max_length: 512
+  learning_rate: 1.0e-4
+  num_train_epochs: 1
+  logging_steps: 10
+  eval_strategy: steps
+  eval_steps: 100
+  save_steps: 200

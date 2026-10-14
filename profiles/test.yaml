@@ -1,0 +1,13 @@
+# Sanity check only: proves the model loads, the dataset parses and
+# training steps. Not a usable adapter; GGUF export is off by default.
+peft:
+  r: 4
+  lora_alpha: 8
+  target_modules: auto
+sft:
+  per_device_train_batch_size: 1
+  max_length: 256
+  learning_rate: 2.0e-4
+  max_steps: 10
+  logging_steps: 1
+  save_strategy: "no"

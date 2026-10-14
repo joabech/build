@@ -1,0 +1,19 @@
+# Best quality, slowest: DoRA on every linear layer, larger rank. Watch the
+# eval_loss lines -- if it stops improving while train loss keeps falling,
+# use an earlier checkpoint-* under the adapter dir instead.
+peft:
+  r: 32
+  lora_alpha: 64
+  lora_dropout: 0.05
+  target_modules: all-linear
+  use_dora: true
+sft:
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 8
+  max_length: 1024
+  learning_rate: 5.0e-5
+  num_train_epochs: 3
+  logging_steps: 20
+  eval_strategy: steps
+  eval_steps: 200
+  save_steps: 200

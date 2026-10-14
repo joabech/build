@@ -1,0 +1,31 @@
+# Everything finetune.py needs -- training AND GGUF conversion -- in one
+# venv (.cim/build/.venv, via python-deps: on the build git in sdk.yml).
+#
+# transformers 5.x is needed for recent architectures (e.g. qwen3_5).
+# llama.cpp's own requirements still pin 4.57.6 for convert_hf_to_gguf.py,
+# but the converter works with 5.x; re-check after bumping llama.cpp.
+#
+# trl is pinned to 1.14.x: trl 1.15's SFTTrainer always computes the loss
+# with a fused LM head built on Triton kernels, with no fallback. The CPU
+# torch wheel on Linux has no Triton and macOS has none at all, so 1.15
+# fails there with "'NoneType' object has no attribute 'apply'".
+#
+# torch comes from the pytorch wheel *page* (--find-links), not as an
+# --extra-index-url: uv only takes a package's versions from the first
+# index that has it, and the pytorch index also serves an old `requests`
+# that breaks `datasets`. The CPU build on Linux keeps the venv ~1GB
+# instead of pulling the CUDA stack; macOS wheels include MPS (Apple GPU).
+--find-links https://download.pytorch.org/whl/torch/
+torch==2.11.0+cpu ; sys_platform == "linux"
+torch==2.11.0 ; sys_platform == "darwin"
+transformers==5.19.0
+trl==1.14.2
+peft
+accelerate
+datasets
+# convert_hf_to_gguf.py / llama.cpp's bundled gguf-py
+sentencepiece
+protobuf
+numpy
+pyyaml
+tqdm
