@@ -9,7 +9,7 @@
 
 ALIF_BOARD      ?= alif_e8_dk/ae822fa0e5597xx0/rtss_he
 ALIF_SAMPLE     ?= zephyr/samples/hello_world
-ALIF_BUILD_DIR  ?= build/alif
+ALIF_BUILD_DIR  ?= $(OUTPUT_DIR)/alif
 ALIF_WEST_CACHE ?= ${HOME}/tmp/mirror/.alifcache/west/git
 
 ZEPHYR_SDK_INSTALL_DIR := $(WORKSPACE)/toolchains/zephyr-sdk
@@ -51,12 +51,12 @@ alif-build:
 	  west build -p always -b $(ALIF_BOARD) -d $(ALIF_BUILD_DIR) $(ALIF_SAMPLE)
 
 alif-test:
-	@[ -f $(WORKSPACE)/$(ALIF_BUILD_DIR)/zephyr/zephyr.elf ] || { echo "ERROR: $(ALIF_BUILD_DIR)/zephyr/zephyr.elf not found. Run 'make sdk-build' first."; exit 1; }
+	@[ -f $(ALIF_BUILD_DIR)/zephyr/zephyr.elf ] || { echo "ERROR: $(ALIF_BUILD_DIR)/zephyr/zephyr.elf not found. Run 'make sdk-build' first."; exit 1; }
 	@echo "Alif build artifact exists:"
-	@ls -lh $(WORKSPACE)/$(ALIF_BUILD_DIR)/zephyr/zephyr.elf
+	@ls -lh $(ALIF_BUILD_DIR)/zephyr/zephyr.elf
 
 alif-clean:
-	rm -rf $(WORKSPACE)/$(ALIF_BUILD_DIR)
+	rm -rf $(ALIF_BUILD_DIR)
 
 alif-flash:
 	@[ -d $(ALIF_SE_TOOLS_DIR) ] || { echo "ERROR: Alif Security Toolkit not found at $(ALIF_SE_TOOLS_DIR). Run 'make install-alif-se-tools-extract' first."; exit 1; }
